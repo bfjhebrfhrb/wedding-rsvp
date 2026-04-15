@@ -1,0 +1,21 @@
+# Render Blueprint для автоматического деплоя
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: wedding-rsvp
+    env: python
+    region: frankfurt  # Ближайший регион к России/Европе
+    plan: free  # Можно изменить на starter/standard
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PORT
+        value: 10000  # Render использует этот порт по умолчанию
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    # Persistent disk для SQLite базы данных
+    disk:
+      name: rsvp-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1

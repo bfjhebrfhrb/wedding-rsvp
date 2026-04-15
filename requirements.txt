@@ -1,0 +1,11 @@
+# Зависимости для RSVP Wedding Invitation App
+# Python 3.11+
+
+# Стандартная библиотека Python уже включает:
+# - sqlite3
+# - http.server
+# - json
+# - urllib
+
+# Для production рекомендуется использовать более надежный сервер
+gunicorn==21.2.0

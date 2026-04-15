@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html class="light" lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Архив: Админ-панель</title>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f7f3ee",
+                        "surface-container": "#f1ede8",
+                        "background": "#fdf9f4",
+                        "primary": "#7e5139",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#d6c3ba",
+                        "outline": "#83746d",
+                        "surface": "#fdf9f4",
+                        "on-surface": "#1c1c19",
+                        "on-surface-variant": "#51443e",
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Newsreader", "serif"],
+                        "body": ["Work Sans", "sans-serif"],
+                        "label": ["Work Sans", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/20 p-4 md:p-16">
+    <div class="max-w-[1400px] mx-auto">
+        <header class="mb-12 md:mb-16 border-b border-outline-variant/30 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div>
+                <span class="font-label uppercase tracking-[0.3em] text-[10px] text-primary mb-4 block">Управление гостями</span>
+                <h1 class="font-headline text-5xl md:text-6xl italic">Ответы RSVP</h1>
+            </div>
+            <a href="/" class="font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors border-b border-transparent hover:border-primary pb-1">Вернуться к приглашению</a>
+        </header>
+
+        <div class="bg-surface-container-low p-4 md:p-8 shadow-sm md:overflow-x-auto rounded-none">
+            <table class="w-full text-left border-collapse md:min-w-[1000px] block md:table">
+                <thead class="hidden md:table-header-group">
+                    <tr class="border-b-2 border-outline/20">
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Имя гостя</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Присутствие</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Второй день</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Проживание</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Напитки</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Дети</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Музыка</th>
+                        <th class="font-label uppercase tracking-widest text-[10px] text-on-surface-variant py-4 px-4">Пожелания</th>
+                    </tr>
+                </thead>
+                <tbody id="rsvps-tbody" class="block md:table-row-group md:divide-y md:divide-outline-variant/30">
+                    <!-- Заполняется через JS -->
+                    <tr class="block md:table-row">
+                        <td colspan="8" class="block md:table-cell text-center py-12 text-on-surface-variant font-label text-sm uppercase tracking-widest">
+                            Получение данных...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchRSVPs() {
+            try {
+                const res = await fetch('/api/rsvps');
+                if (!res.ok) throw new Error('Failed to load');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('rsvps-tbody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr class="block md:table-row"><td colspan="8" class="text-center py-12 text-on-surface-variant font-label text-sm uppercase tracking-widest block md:table-cell">Пока нет ответов</td></tr>`;
+                    return;
+                }
+
+                data.forEach(guest => {
+                    const presenceText = guest.attendance === 'yes' ? '<span class="text-green-700 font-medium">Придет</span>' : 
+                                         guest.attendance === 'no' ? '<span class="text-red-700 font-medium">Не придет</span>' : '—';
+                    
+                    const day2Text = guest.day2 === 'yes' ? 'Да' : guest.day2 === 'no' ? 'Нет' : '—';
+                    const accommodationText = guest.accommodation === 'yes' ? 'Нужен номер' : guest.accommodation === 'no' ? 'Не нужно' : '—';
+                    
+                    let drinksClean = guest.drinks.replace(/wine_red/g, 'Красное вино')
+                                                  .replace(/wine_white/g, 'Белое вино')
+                                                  .replace(/champagne/g, 'Игристое')
+                                                  .replace(/strong/g, 'Крепкие');
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "flex flex-col md:table-row mb-6 md:mb-0 bg-surface md:bg-transparent shadow-sm md:shadow-none p-5 md:p-0 border border-outline-variant/20 md:border-none transition-colors md:hover:bg-surface-container";
+                    tr.innerHTML = `
+                        <td class="flex md:table-cell flex-col md:flex-row gap-1 py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Имя гостя</span>
+                            <span class="font-headline text-3xl md:text-lg italic text-primary">${guest.name || '—'}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between items-center py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Присутствие</span>
+                            <span class="font-body text-sm">${presenceText}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between items-center py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Второй день</span>
+                            <span class="font-body text-sm">${day2Text}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between items-center py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Проживание</span>
+                            <span class="font-body text-sm">${accommodationText}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between md:justify-start items-center gap-2 py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Напитки</span>
+                            <span class="font-body text-sm text-right md:text-left">${drinksClean || '—'}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between items-center py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Дети</span>
+                            <span class="font-body text-sm text-right md:text-left">${guest.children || '—'}</span>
+                        </td>
+                        <td class="flex md:table-cell justify-between items-center py-3 md:py-4 px-0 md:px-4 border-b border-outline-variant/20 md:border-none">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Музыка</span>
+                            <span class="font-body text-sm text-right md:text-left">${guest.music || '—'}</span>
+                        </td>
+                        <td class="flex md:table-cell flex-col gap-1 py-3 md:py-4 px-0 md:px-4">
+                            <span class="md:hidden font-label uppercase tracking-widest text-[9px] text-on-surface-variant">Пожелания</span>
+                            <span class="font-body text-sm">${guest.allergies || '—'}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error(e);
+                const tbody = document.getElementById('rsvps-tbody');
+                tbody.innerHTML = `<tr class="block md:table-row"><td colspan="8" class="text-center py-12 text-red-700 font-label text-sm tracking-widest block md:table-cell">Ошибка загрузки</td></tr>`;
+            }
+        }
+        
+        fetchRSVPs();
+    </script>
+</body>
+</html>
