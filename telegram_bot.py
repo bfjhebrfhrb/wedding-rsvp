@@ -5,6 +5,7 @@ import os
 import json
 import urllib.request
 import urllib.parse
+import ssl
 from typing import Optional
 
 
@@ -36,6 +37,9 @@ class TelegramNotifier:
         """
         success_count = 0
         
+        # Создаём SSL контекст для обхода проблем с сертификатами
+        ssl_context = ssl.create_default_context()
+        
         for chat_id in self.chat_ids:
             try:
                 url = f"{self.api_url}/sendMessage"
@@ -50,7 +54,7 @@ class TelegramNotifier:
                 
                 # Отправляем запрос
                 req = urllib.request.Request(url, data=data_encoded, method='POST')
-                with urllib.request.urlopen(req, timeout=10) as response:
+                with urllib.request.urlopen(req, timeout=10, context=ssl_context) as response:
                     result = json.loads(response.read().decode('utf-8'))
                     if result.get('ok', False):
                         success_count += 1
