@@ -77,9 +77,9 @@ class TelegramNotifier:
         """
         # Эмодзи для красоты
         emoji_map = {
-            'yes': '✅',
-            'no': '❌',
-            'maybe': '🤔'
+            'да': '✅',
+            'нет': '❌',
+            'может быть': '🤔'
         }
         
         name = rsvp_data.get('name', 'Не указано')
@@ -103,9 +103,11 @@ class TelegramNotifier:
             message += f"🍷 <b>Напитки:</b> {drinks}\n"
         
         if day2:
-            message += f"📅 <b>Второй день:</b> {day2}\n"
+            emoji = emoji_map.get(day2.lower(), '📝')
+            message += f"{emoji} <b>Второй день:</b> {day2}\n"
         
         if accommodation:
+            emoji = emoji_map.get(accommodation.lower(), '📝')
             message += f"🏨 <b>Размещение:</b> {accommodation}\n"
         
         if children:
