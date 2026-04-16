@@ -3,6 +3,7 @@ import json
 import os
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import urllib.parse
+from telegram_bot import init_telegram_notifier, send_rsvp_notification
 
 # Используем переменные окружения для production (Render)
 PORT = int(os.environ.get('PORT', 8000))
@@ -87,6 +88,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 conn.commit()
                 conn.close()
                 
+                # Отправляем уведомление в Telegram
+                telegram_success = send_rsvp_notification(data)
+                if telegram_success:
+                    print(f"✅ Уведомление в Telegram отправлено для: {name}")
+                else:
+                    print(f"⚠️ Не удалось отправить уведомление в Telegram для: {name}")
+                
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.end_headers()
@@ -103,6 +111,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     init_db()
+    init_telegram_notifier()  # Инициализируем Telegram бота
     # Bind на 0.0.0.0 для доступа извне (требуется для Render)
     server_address = ('0.0.0.0', PORT)
     httpd = HTTPServer(server_address, RequestHandler)

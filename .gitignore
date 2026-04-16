@@ -45,3 +45,7 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env.production
+
+# Telegram credentials (если будут в отдельном файле)
+telegram_config.py
