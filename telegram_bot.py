@@ -11,49 +11,55 @@ from typing import Optional
 class TelegramNotifier:
     """Класс для отправки уведомлений в Telegram"""
     
-    def __init__(self, bot_token: str, chat_id: str):
+    def __init__(self, bot_token: str, chat_ids: list):
         """
         Инициализация Telegram бота
         
         Args:
             bot_token: Токен бота от BotFather
-            chat_id: ID чата для отправки уведомлений
+            chat_ids: Список ID чатов для отправки уведомлений
         """
         self.bot_token = bot_token
-        self.chat_id = chat_id
+        self.chat_ids = chat_ids if isinstance(chat_ids, list) else [chat_ids]
         self.api_url = f"https://api.telegram.org/bot{bot_token}"
     
     def send_message(self, text: str, parse_mode: str = "HTML") -> bool:
         """
-        Отправка сообщения в Telegram
+        Отправка сообщения в Telegram всем получателям
         
         Args:
             text: Текст сообщения
             parse_mode: Режим форматирования (HTML или Markdown)
             
         Returns:
-            True если сообщение отправлено успешно, False в случае ошибки
+            True если хотя бы одно сообщение отправлено успешно
         """
-        try:
-            url = f"{self.api_url}/sendMessage"
-            data = {
-                "chat_id": self.chat_id,
-                "text": text,
-                "parse_mode": parse_mode
-            }
-            
-            # Кодируем данные для POST запроса
-            data_encoded = urllib.parse.urlencode(data).encode('utf-8')
-            
-            # Отправляем запрос
-            req = urllib.request.Request(url, data=data_encoded, method='POST')
-            with urllib.request.urlopen(req, timeout=10) as response:
-                result = json.loads(response.read().decode('utf-8'))
-                return result.get('ok', False)
+        success_count = 0
+        
+        for chat_id in self.chat_ids:
+            try:
+                url = f"{self.api_url}/sendMessage"
+                data = {
+                    "chat_id": chat_id,
+                    "text": text,
+                    "parse_mode": parse_mode
+                }
                 
-        except Exception as e:
-            print(f"Ошибка отправки в Telegram: {e}")
-            return False
+                # Кодируем данные для POST запроса
+                data_encoded = urllib.parse.urlencode(data).encode('utf-8')
+                
+                # Отправляем запрос
+                req = urllib.request.Request(url, data=data_encoded, method='POST')
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    result = json.loads(response.read().decode('utf-8'))
+                    if result.get('ok', False):
+                        success_count += 1
+                        print(f"✅ Сообщение отправлено в chat_id: {chat_id}")
+                    
+            except Exception as e:
+                print(f"❌ Ошибка отправки в Telegram (chat_id: {chat_id}): {e}")
+        
+        return success_count > 0
     
     def format_rsvp_notification(self, rsvp_data: dict) -> str:
         """
@@ -130,15 +136,19 @@ _notifier: Optional[TelegramNotifier] = None
 def init_telegram_notifier():
     """
     Инициализация Telegram уведомлений из переменных окружения
+    Поддерживает несколько получателей через запятую
     """
     global _notifier
     
     bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '8740040801:AAFkpmQ6OqijO-AacYPPzizComEkjLKYeSs')
-    chat_id = os.environ.get('TELEGRAM_CHAT_ID', '869911026')
+    chat_ids_str = os.environ.get('TELEGRAM_CHAT_ID', '869911026,1990063559')
     
-    if bot_token and chat_id:
-        _notifier = TelegramNotifier(bot_token, chat_id)
-        print(f"✅ Telegram уведомления активированы для chat_id: {chat_id}")
+    if bot_token and chat_ids_str:
+        # Парсим список chat_id (поддержка нескольких ID через запятую)
+        chat_ids = [cid.strip() for cid in chat_ids_str.split(',') if cid.strip()]
+        
+        _notifier = TelegramNotifier(bot_token, chat_ids)
+        print(f"✅ Telegram уведомления активированы для {len(chat_ids)} получателей: {', '.join(chat_ids)}")
     else:
         print("⚠️ Telegram уведомления отключены (не заданы TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID)")
 
